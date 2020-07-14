@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+
+  redis:
+    image: redis:5.0
+    networks:
+      - social_network_site
+
+  redis_for_channels:
+    image: redis:5.0
+    networks:
+      - social_network_site
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile_app
+    command: bash -c "python3 manage.py runserver '0.0.0.0:8000'"
+    ports:
+      - "8001:8000"
+    networks:
+      - social_network_site
+    depends_on:
+      - redis
+    volumes:
+      - ./static/:/social_network_site/static/
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile_app
+    command: bash -c "celery -A social_network_site worker -l info"
+    networks:
+      - social_network_site
+    depends_on:
+      - redis
+      - app
+
+networks:
+  social_network_site:
+    external: true
